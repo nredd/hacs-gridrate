@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# script/test-live: Run the live Opower check against the real utility API
+#
+# Logs in to the utility with real credentials and reads accounts, forecasts,
+# and a small window of cost/usage data. It performs NO writes. Credentials are
+# taken from the environment (never stored):
+#
+#   GRIDRATE_UTILITY   e.g. "pge"
+#   GRIDRATE_USERNAME
+#   GRIDRATE_PASSWORD
+#   GRIDRATE_TOTP      optional TOTP secret for MFA
+#
+# It runs tests/live_opower.py as a plain script (NOT pytest) so it stays out of
+# the offline test suite. uv auto-syncs the normal project env.
+#
+# Usage:
+#   GRIDRATE_UTILITY=pge GRIDRATE_USERNAME=... GRIDRATE_PASSWORD=... ./script/test-live
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# shellcheck source=script/.lib/output.sh
+source "$SCRIPT_DIR/.lib/output.sh"
+
+run_hook "test-live" "pre"
+
+require_command uv "https://docs.astral.sh/uv/getting-started/installation/"
+
+if [[ ! -f tests/live_opower.py ]]; then
+    log_info "tests/live_opower.py does not exist yet — nothing to run."
+    exit 0
+fi
+
+if [[ -z "${GRIDRATE_USERNAME:-}" || -z "${GRIDRATE_PASSWORD:-}" ]]; then
+    log_error "Set GRIDRATE_UTILITY, GRIDRATE_USERNAME, and GRIDRATE_PASSWORD first."
+    exit 1
+fi
+
+log_header "Running live Opower check"
+echo ""
+
+# `uv run` auto-syncs the project env.
+uv run python tests/live_opower.py
+
+run_hook "test-live" "post"
+
+log_success "Live Opower test completed"

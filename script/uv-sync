@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# script/uv-sync: Sync the virtual environment from the locked lockfile
+#
+# Runs uv sync --locked to install all dependencies exactly as pinned in
+# uv.lock. Fails if uv.lock is inconsistent with pyproject.toml.
+#
+# Usage:
+#   ./script/uv-sync
+#
+# Examples:
+#   ./script/uv-sync
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# shellcheck source=script/.lib/output.sh
+source "$SCRIPT_DIR/.lib/output.sh"
+
+run_hook "uv-sync" "pre"
+
+log_header "Syncing virtual environment"
+
+uv sync --locked
+
+run_hook "uv-sync" "post"
+
+log_success "Virtual environment synced"

@@ -1,0 +1,96 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+#
+# This configuration uses local hooks that rely on packages
+# installed in the virtual environment. Run script/setup/bootstrap to install.
+#
+# Python hooks use the currently activated virtual environment or fall back
+# to the standard location at $HOME/.local/ha-venv.
+#
+repos:
+  - repo: local
+    hooks:
+      # Run the Ruff formatter first — format before lint (clean slate for linter)
+      - id: ruff-format
+        name: ruff format
+        entry: bash -c 'if command -v ruff &>/dev/null; then ruff format "$@"; exit $?; fi; for venv in "$HOME/.local/ha-venv" ".local/ha-venv"; do if [[ -f "$venv/bin/ruff" ]]; then source "$venv/bin/activate" 2>/dev/null || true; ruff format "$@"; exit $?; fi; done; echo "⚠️  Skipping ruff format (venv not ready)"; exit 0' --
+        language: system
+        types: [python]
+        require_serial: true
+        pass_filenames: true
+
+      # Run the Ruff linter with auto-fix after formatting
+      - id: ruff
+        name: ruff
+        entry: bash -c 'if command -v ruff &>/dev/null; then ruff check --fix --exit-non-zero-on-fix "$@"; exit $?; fi; for venv in "$HOME/.local/ha-venv" ".local/ha-venv"; do if [[ -f "$venv/bin/ruff" ]]; then source "$venv/bin/activate" 2>/dev/null || true; ruff check --fix --exit-non-zero-on-fix "$@"; exit $?; fi; done; echo "⚠️  Skipping ruff (venv not ready)"; exit 0' --
+        language: system
+        types: [python]
+        require_serial: true
+        pass_filenames: true
+
+      # YAML linting
+      - id: yamllint
+        name: yamllint
+        entry: bash -c 'if command -v yamllint &>/dev/null; then yamllint -c .yamllint.yml "$@"; exit $?; fi; for venv in "$HOME/.local/ha-venv" ".local/ha-venv"; do if [[ -f "$venv/bin/yamllint" ]]; then source "$venv/bin/activate" 2>/dev/null || true; yamllint -c .yamllint.yml "$@"; exit $?; fi; done; echo "⚠️  Skipping yamllint (venv not ready)"; exit 0' --
+        language: system
+        types: [yaml]
+        files: ^(custom_components/gridrate/|schemas/yaml/|\.github/|\.pre-commit-config\.yaml)
+        pass_filenames: true
+
+      # Verify uv.lock is consistent with pyproject.toml
+      - id: lock-check
+        name: uv lock check
+        entry: ./script/lock-check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
+      # Keep HA release train in sync across all three version sources:
+      #   uv.lock (pytest-homeassistant-custom-component pin)
+      #   hacs.json (homeassistant minimum)
+      #   .devcontainer/.env (HA_VERSION override, if set)
+      - id: ha-version-sync
+        name: homeassistant/pytest-homeassistant-custom-component sync
+        entry: ./script/ha-version-sync
+        language: system
+        files: ^(hacs\.json|uv\.lock|\.devcontainer/\.env)$
+        pass_filenames: false
+
+      # Shell script linting
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck -x
+        language: system
+        types: [shell]
+        files: ^(script/|\.devcontainer/)
+        pass_filenames: true
+
+      # Shell script formatting
+      - id: shfmt
+        name: shfmt
+        entry: shfmt -i 4 -w
+        language: system
+        types: [shell]
+        files: ^(script/|\.devcontainer/)
+        pass_filenames: true
+
+      # Conventional commit message format (required by release-please for semver bumping)
+      # Types mirror release-please-config.json changelog sections + revert.
+      - id: conventional-pre-commit
+        name: conventional commit
+        stages: [commit-msg]
+        entry: bash -c 'if command -v conventional-pre-commit &>/dev/null; then conventional-pre-commit feat fix perf refactor chore docs test ci revert "$@"; exit $?; fi; for venv in "$HOME/.local/ha-venv" ".local/ha-venv"; do if [[ -f "$venv/bin/conventional-pre-commit" ]]; then source "$venv/bin/activate" 2>/dev/null || true; conventional-pre-commit feat fix perf refactor chore docs test ci revert "$@"; exit $?; fi; done; echo "⚠️  Skipping conventional-pre-commit (venv not ready)"; exit 0' --
+        language: system
+        always_run: true
+        pass_filenames: false
+
+      # Spell checking
+      - id: codespell
+        name: codespell
+        entry: bash -c 'if command -v codespell &>/dev/null; then codespell "$@"; exit $?; fi; for venv in "$HOME/.local/ha-venv" ".local/ha-venv"; do if [[ -f "$venv/bin/codespell" ]]; then source "$venv/bin/activate" 2>/dev/null || true; codespell "$@"; exit $?; fi; done; echo "⚠️  Skipping codespell (venv not ready)"; exit 0' --
+        language: system
+        types_or: [python, markdown, rst]
+        exclude_types: [csv, json, html]
+        files: ^(custom_components/|tests/|script/|README\.md|CONTRIBUTING\.md|DEPENDENCIES\.md)
+        pass_filenames: true
+

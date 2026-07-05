@@ -1,0 +1,200 @@
+# Single source of truth for the gridrate Home Assistant integration.
+#
+# Environment, dependencies, and ALL tooling configuration live here and are
+# driven through `uv`:
+#   uv sync --locked          # create/refresh the env from uv.lock
+#   uv run ruff format .      # format
+#   uv run ruff check .       # lint
+#   uv run ty check           # type-check (Astral ty)
+#   uv run pytest             # tests
+#
+# The integration itself is NOT a pip-installed package (Home Assistant loads it
+# from custom_components/ and installs its runtime deps from manifest.json), so
+# uv manages only the dev/test/tooling environment (`package = false`).
+
+[project]
+name = "gridrate"
+version = "0.0.0"                       # Runtime version is managed in manifest.json
+description = "Native Home Assistant integration for real utility rate plans: bill-accurate real-time electricity pricing and cost tracking (subsumes opower)."
+readme = "README.md"
+requires-python = ">=3.14.2,<3.15"
+authors = [{ name = "Nicholas Redd" }]
+
+[dependency-groups]
+# Everything needed to develop, type-check, and test the integration locally and
+# in CI. `pytest-homeassistant-custom-component` pulls in homeassistant + the full
+# pytest stack (pytest, pytest-asyncio, …) transitively.
+dev = [
+    "pytest-homeassistant-custom-component>=0.13.339",
+    # Runtime dependency (manifest.json requirements); installed here so the
+    # integration imports cleanly in dev and CI.
+    "opower>=0.18.6",
+    "ruff>=0.15.0",
+    "ty>=0.0.51",
+    "yamllint>=1.35",
+    "codespell>=2.4.1",
+    "conventional-pre-commit>=3.0",
+    "colorlog==6.10.1",
+    "zlib_ng==1.0.0",
+    "isal==1.8.0",
+]
+
+[tool.uv]
+package = false
+
+# --------------------------------------------------------------------------- #
+# ty — Astral type checker (canonical; replaces pyright)
+# --------------------------------------------------------------------------- #
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["custom_components/gridrate", "tests"]
+
+[tool.ty.terminal]
+# Strictest posture ty currently offers: fail on ANY diagnostic, including
+# warning-level ones, so CI is red on the first hint of a type problem.
+error-on-warning = true
+
+# --------------------------------------------------------------------------- #
+# Ruff — formatter + linter (latest/greatest rule set)
+# --------------------------------------------------------------------------- #
+[tool.ruff]
+target-version = "py314"
+line-length = 90
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+# Enable every rule Ruff ships, then carve out the few that are impractical for a
+# Home Assistant integration or that conflict with the formatter.
+select = ["ALL"]
+ignore = [
+    # --- Conflict with the Ruff formatter (must stay off) ---
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    "D206",
+    "D300",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "COM812",
+    "COM819",
+    "ISC001",
+    "ISC002",
+    "E501",    # line length handled by the formatter
+
+    # --- Docstring convention (Google) selects D211/D212; drop the conflicting pair ---
+    "D203",
+    "D213",
+
+    # --- Pragmatic for Home Assistant integration code ---
+    "ANN401",  # Allow typing.Any where the HA API hands us dynamic data
+    "FBT001",  # Boolean positional arg — HA service/command signatures use them
+    "FBT002",
+    "FBT003",
+    "EM101",   # Exception string literals — noise for a small codebase
+    "EM102",
+    "TRY003",  # Long messages outside the exception class
+    "TC001",   # Moving imports into TYPE_CHECKING blocks breaks HA test patching
+    "TC002",
+    "TC003",
+    "PLR0913", # HA entities/coordinators legitimately take many args
+    "PLR2004", # Magic values are common and readable in protocol parsing
+    "G004",    # f-strings in logging are acceptable here
+    "COM812",  # trailing comma — formatter owns this
+    "RUF012",  # HA entity _attr_* class lists are a documented pattern, not shared mutable state
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",    # assert is the point of tests
+    "PLR2004", # magic values fine in tests
+    "D",       # docstrings not required in tests
+    "ANN",     # type annotations not required in tests
+    "SLF001",  # tests may touch private members
+    "INP001",  # tests are not a package
+    "ARG001",  # pytest fixtures are often requested by name without being referenced
+]
+"script/*" = [
+    "T20",     # print() allowed in scripts
+    "INP001",  # scripts are not a package
+]
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+voluptuous = "vol"
+"homeassistant.helpers.config_validation" = "cv"
+"homeassistant.helpers.device_registry" = "dr"
+"homeassistant.helpers.entity_registry" = "er"
+"homeassistant.util.dt" = "dt_util"
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"async_timeout".msg = "use asyncio.timeout instead"
+"pytz".msg = "use zoneinfo instead"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components"]
+combine-as-imports = true
+split-on-trailing-comma = false
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+property-decorators = ["propcache.api.cached_property"]
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
+
+# --------------------------------------------------------------------------- #
+# codespell
+# --------------------------------------------------------------------------- #
+[tool.codespell]
+ignore-words-list = "aiport,astroid,checkin,currenty,hass,iif,incomfort,lookin,nam,NotIn"
+skip = "./.*,*.csv,*.json,*.ambr,uv.lock"
+quiet-level = 2
+
+# --------------------------------------------------------------------------- #
+# pytest
+# --------------------------------------------------------------------------- #
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+norecursedirs = [".git", "testing_config"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra -q --strict-markers"
+markers = [
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may use coordinator/time service)",
+]
+# Home Assistant and its dependencies emit assorted warnings during component
+# setup; do not treat them as errors.
+filterwarnings = ["default"]
+
+# --------------------------------------------------------------------------- #
+# coverage
+# --------------------------------------------------------------------------- #
+[tool.coverage.run]
+source = ["custom_components/gridrate"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@overload",
+]

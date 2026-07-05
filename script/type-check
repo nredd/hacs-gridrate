@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# script/type-check: Run type checking tools
+#
+# Runs ty (Astral) to validate type annotations and catch type-related issues.
+#
+# Usage:
+#   ./script/type-check
+#
+# Examples:
+#   ./script/type-check
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# shellcheck source=script/.lib/output.sh
+source "$SCRIPT_DIR/.lib/output.sh"
+
+run_hook "type-check" "pre"
+
+log_header "Running type checking tools"
+
+uv run ty check
+
+run_hook "type-check" "post"
+log_success "Type checking completed"

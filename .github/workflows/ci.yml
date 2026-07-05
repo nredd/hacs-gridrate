@@ -1,0 +1,82 @@
+name: CI
+
+# Single CI workflow for the integration. Combines what used to live in
+# ci.yml + validate.yml + ha-version-sync-check.yml:
+#   * smoke           lint + type + test, run INSIDE the real devcontainer image
+#   * hassfest        Home Assistant integration manifest validation
+#   * hacs            HACS repository validation
+#
+# Release automation (release-please.yml) and issue triage (auto-assign.yml) live
+# in their own workflows — different triggers and concerns.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Daily — keeps hassfest/HACS validation honest as upstream rules evolve.
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  smoke:
+    name: Smoke
+    # Build the project's devcontainer image and run script/smoke inside it, so CI
+    # and local dev share one environment. Split into explicit build / start / run
+    # steps via the Dev Containers CLI so a failure points at the right phase.
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install devcontainer CLI
+        # TODO(redd): delete??
+        run: npm install -g @devcontainers/cli@0.87.0
+
+      - name: Build
+        run: devcontainer build --workspace-folder .
+
+      - name: Start
+        run: devcontainer up --workspace-folder .
+
+      - name: Smoke
+        run: devcontainer exec --workspace-folder . script/smoke
+
+  hassfest:
+    # https://developers.home-assistant.io/blog/2020/04/16/hassfest
+    name: Hassfest validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Validate
+        uses: home-assistant/actions/hassfest@868e6cb4607727d764341a158d98872cd63fa658 # master
+
+  hacs:
+    # https://github.com/hacs/action
+    name: HACS validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Validate
+        uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+        with:
+          category: integration
+          # Remove this 'ignore' key once brand images are added for the integration:
+          # https://developers.home-assistant.io/docs/creating_integration_file_structure/#brand-images---brand
+          ignore: brands

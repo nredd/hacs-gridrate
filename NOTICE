@@ -1,0 +1,27 @@
+hacs-gridrate — Home Assistant integration for real utility rate plans
+Copyright (c) 2026 Nicholas Redd
+
+This product includes work derived from the following projects:
+
+1. Home Assistant Core — `opower` integration  (Apache License 2.0)
+   https://github.com/home-assistant/core/tree/dev/homeassistant/components/opower
+   Copyright Home Assistant contributors; integration authored and maintained
+   by @tronikos.
+
+   The utility-account polling coordinator (12-hour polling, reauth handling,
+   external statistics insertion with sum continuation, multi-resolution
+   cost/usage read merging), the credentials/MFA config-flow steps, the bill
+   sensor entity descriptions, the diagnostics redaction set, and the repairs
+   fix-flow pattern in custom_components/gridrate/ were ported and adapted
+   from that integration. The Apache License 2.0 text is available at:
+   https://www.apache.org/licenses/LICENSE-2.0
+
+2. tronikos/opower  (Apache License 2.0)
+   https://github.com/tronikos/opower
+   Used as a runtime dependency (not vendored) for utility authentication and
+   usage/cost data retrieval.
+
+The remainder of this project — the tariff rate engine, tariff definitions,
+rate derivation/self-calibration, the realtime cost coordinator, and the
+rate/cost entities — is original work licensed under the MIT License (see
+LICENSE).

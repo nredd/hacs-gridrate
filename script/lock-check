@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# script/lock-check: Verify uv.lock is consistent with pyproject.toml
+#
+# Exits non-zero if uv.lock is out of date with respect to pyproject.toml.
+# Does not modify any files.
+#
+# Usage:
+#   ./script/lock-check
+#
+# Examples:
+#   ./script/lock-check
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
+# shellcheck source=script/.lib/output.sh
+source "$SCRIPT_DIR/.lib/output.sh"
+
+run_hook "lock-check" "pre"
+
+log_header "Checking uv.lock is up-to-date"
+
+uv lock --check
+
+run_hook "lock-check" "post"
+
+log_success "uv.lock is up-to-date"

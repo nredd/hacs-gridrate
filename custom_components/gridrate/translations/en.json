@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "GridRate",
+        "description": "Connect your utility account to set up bill-accurate rate and cost tracking."
+      }
+    },
+    "abort": {
+      "already_configured": "This utility account is already configured",
+      "not_implemented": "GridRate setup is not implemented yet"
+    }
+  }
+}
