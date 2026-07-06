@@ -32,12 +32,12 @@ from custom_components.gridrate.const import (
     LOGGER,
     PLAN_NONE,
 )
-from custom_components.gridrate.drift import async_check_drift
 from custom_components.gridrate.coordinator import (
     GridRateOpowerCoordinator,
     GridRateRealtimeCoordinator,
 )
 from custom_components.gridrate.data import GridRateData
+from custom_components.gridrate.drift import async_check_drift
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant

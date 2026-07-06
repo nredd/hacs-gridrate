@@ -10,17 +10,14 @@ applies them as a config-entry override (see ``repairs.py``).
 from __future__ import annotations
 
 from datetime import timedelta
+import json
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from homeassistant.core import callback
 from homeassistant.helpers import issue_registry as ir
 
-from custom_components.gridrate.api.derivation import (
-    HourlyRead,
-    derive,
-    drift_report,
-)
+from custom_components.gridrate.api.derivation import HourlyRead, derive, drift_report
 from custom_components.gridrate.api.tariff import season_for
 from custom_components.gridrate.const import DOMAIN, LOGGER
 
@@ -122,10 +119,13 @@ def async_check_drift(
             "entry_id": entry.entry_id,
             "season": season.name,
             "effective_on": today.isoformat(),
-            "fixes": {
-                item.field: str(item.derived)
-                for item in report.drifted
-                if item.derived is not None
-            },
+            # Issue data values must be scalars; the fix flow parses this.
+            "fixes": json.dumps(
+                {
+                    item.field: str(item.derived)
+                    for item in report.drifted
+                    if item.derived is not None
+                }
+            ),
         },
     )

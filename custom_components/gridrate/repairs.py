@@ -13,16 +13,14 @@ Two fix flows:
 from __future__ import annotations
 
 from datetime import date
+import json
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.repairs import RepairsFlow
 
 from custom_components.gridrate.api.derivation import apply_drift_fixes
 from custom_components.gridrate.api.tariff import load_shipped_plan, tariff_to_dict
-from custom_components.gridrate.const import (
-    CONF_DELIVERY_OVERRIDE,
-    CONF_DELIVERY_PLAN,
-)
+from custom_components.gridrate.const import CONF_DELIVERY_OVERRIDE, CONF_DELIVERY_PLAN
 from custom_components.gridrate.drift import ISSUE_PREFIX
 
 if TYPE_CHECKING:
@@ -67,7 +65,7 @@ class TariffDriftFixFlow(RepairsFlow):
         self._entry_id: str = data["entry_id"]
         self._season: str = data["season"]
         self._effective_on = date.fromisoformat(data["effective_on"])
-        self._fixes: dict[str, str] = data["fixes"]
+        self._fixes: dict[str, str] = json.loads(data["fixes"])
 
     async def async_step_init(
         self,
