@@ -184,6 +184,20 @@
     }
   },
   "issues": {
+    "tariff_drift": {
+      "title": "Utility rates changed: {tariff}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Apply utility-derived rates?",
+            "description": "GridRate re-derived your tariff from the utility's own hourly billed data and found values that differ from the configured tariff (season: {season}):\n\n{details}\n\nSelect **Submit** to apply the derived values as an override. Your cost tracking will use the corrected rates immediately."
+          }
+        },
+        "abort": {
+          "entry_removed": "The config entry no longer exists."
+        }
+      }
+    },
     "unsupported_utility": {
       "title": "Unsupported utility: {utility}",
       "fix_flow": {

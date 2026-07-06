@@ -18,6 +18,8 @@ CONF_LOGIN_DATA = "login_data"
 CONF_METER_ENTITY = "meter_entity"
 CONF_DELIVERY_PLAN = "delivery_plan"
 CONF_GENERATION_PLAN = "generation_plan"
+# JSON-mapping tariff override written by the drift repair fix flow.
+CONF_DELIVERY_OVERRIDE = "delivery_override"
 
 # Option value meaning "no plan selected".
 PLAN_NONE = "none"

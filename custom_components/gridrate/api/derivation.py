@@ -22,17 +22,19 @@ compare against the configured tariff with :func:`drift_report`.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from itertools import pairwise
 from statistics import median
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from custom_components.gridrate.api.tariff.models import WILDCARD
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
-    from datetime import date, datetime
+    from collections.abc import Iterable, Mapping, Sequence
+    from datetime import datetime
 
     from custom_components.gridrate.api.tariff.models import TariffVersion
 
@@ -376,3 +378,51 @@ def drift_report(
         )
 
     return DriftReport(items=tuple(items))
+
+
+def apply_drift_fixes(
+    tariff_dict: dict[str, Any],
+    season: str,
+    effective_on: date,
+    fixes: Mapping[str, str],
+) -> dict[str, Any]:
+    """Return a tariff dict with derived values applied to one season.
+
+    ``tariff_dict`` is the JSON-mapping form of a tariff (see
+    :mod:`.tariff.schema`); ``fixes`` maps drift-item field names (e.g.
+    ``delivery_energy.peak``, ``baseline_credit``,
+    ``baseline_allowance_kwh_per_day``) to their derived values as strings.
+    The version in force on ``effective_on`` is patched in place (the caller
+    persists the result, e.g. as a config-entry option override).
+    """
+    patched = deepcopy(tariff_dict)
+    version = next(
+        (
+            candidate
+            for candidate in patched.get("versions", [])
+            if _covers(candidate, effective_on)
+        ),
+        None,
+    )
+    if version is None:
+        return patched
+
+    for field, value in fixes.items():
+        if field.startswith("delivery_energy."):
+            period = field.removeprefix("delivery_energy.")
+            for component in version.get("energy_components", []):
+                if component.get("category") == "delivery":
+                    component["rates"].setdefault(season, {})[period] = value
+        elif field == "baseline_credit" and version.get("baseline"):
+            version["baseline"]["credit_per_kwh"] = value
+        elif field == "baseline_allowance_kwh_per_day" and version.get("baseline"):
+            version["baseline"]["allowance_kwh_per_day"][season] = value
+    return patched
+
+
+def _covers(version_dict: dict[str, Any], day: date) -> bool:
+    """Return whether a version mapping is in force on ``day``."""
+    if day < date.fromisoformat(version_dict["effective_from"]):
+        return False
+    effective_to = version_dict.get("effective_to")
+    return effective_to is None or day < date.fromisoformat(effective_to)
