@@ -11,10 +11,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
+from homeassistant.helpers import issue_registry as ir
 import homeassistant.helpers.config_validation as cv
 from homeassistant.loader import async_get_loaded_integration
+from opower import select_utility
 
-from custom_components.gridrate.const import DOMAIN
+from custom_components.gridrate.const import CONF_UTILITY, DOMAIN
+from custom_components.gridrate.coordinator import GridRateOpowerCoordinator
 from custom_components.gridrate.data import GridRateData
 
 if TYPE_CHECKING:
@@ -22,14 +25,37 @@ if TYPE_CHECKING:
 
     from custom_components.gridrate.data import GridRateConfigEntry
 
-PLATFORMS: list[Platform] = []
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GridRateConfigEntry) -> bool:
     """Set up a GridRate utility account from a config entry."""
+    utility_name = entry.data[CONF_UTILITY]
+    try:
+        select_utility(utility_name)
+    except ValueError:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            f"unsupported_utility_{entry.entry_id}",
+            is_fixable=True,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key="unsupported_utility",
+            translation_placeholders={"utility": utility_name},
+            data={
+                "entry_id": entry.entry_id,
+                "utility": utility_name,
+                "title": entry.title,
+            },
+        )
+        return False
+
+    coordinator = GridRateOpowerCoordinator(hass, entry)
+    await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = GridRateData(
+        opower_coordinator=coordinator,
         integration=async_get_loaded_integration(hass, entry.domain),
     )
 
