@@ -1,0 +1,51 @@
+{
+  "id": "pge_e_tou_c",
+  "name": "PG&E E-TOU-C delivery (Baseline Territory T)",
+  "currency": "USD",
+  "versions": [
+    {
+      "effective_from": "2026-03-01",
+      "effective_to": null,
+      "seasons": [
+        { "name": "summer", "from": "06-01", "to": "09-30" },
+        { "name": "winter", "from": "10-01", "to": "05-31" }
+      ],
+      "tou_windows": [{ "period": "peak", "start_hour": 16, "end_hour": 21 }],
+      "default_period": "off_peak",
+      "energy_components": [
+        {
+          "name": "delivery_energy",
+          "category": "delivery",
+          "rates": {
+            "winter": { "peak": "0.39757", "off_peak": "0.36757" },
+            "summer": { "peak": "0.52240", "off_peak": "0.39940" }
+          }
+        },
+        {
+          "name": "generation_credit",
+          "category": "adder",
+          "rates": {
+            "winter": { "*": "-0.10648" },
+            "summer": { "*": "-0.11835" }
+          }
+        },
+        {
+          "name": "pcia",
+          "category": "adder",
+          "rates": { "*": { "*": "0.03686" } }
+        }
+      ],
+      "percent_surcharges": [
+        { "name": "franchise_fee_surcharge", "percent": "0.21" },
+        { "name": "sf_prop_c_tax_surcharge", "percent": "0.985" }
+      ],
+      "baseline": {
+        "credit_per_kwh": "0.08140",
+        "allowance_kwh_per_day": { "winter": "12.9", "summer": "7.1" }
+      },
+      "fixed_charges": [
+        { "name": "base_services_charge", "per_day": "0.79343" }
+      ]
+    }
+  ]
+}

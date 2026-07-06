@@ -1,0 +1,35 @@
+{
+  "id": "cleanpowersf_e_tou_c3",
+  "name": "CleanPowerSF E-TOU-C3 generation (Green)",
+  "currency": "USD",
+  "versions": [
+    {
+      "effective_from": "2026-03-01",
+      "effective_to": null,
+      "seasons": [
+        { "name": "summer", "from": "06-01", "to": "09-30" },
+        { "name": "winter", "from": "10-01", "to": "05-31" }
+      ],
+      "tou_windows": [{ "period": "peak", "start_hour": 16, "end_hour": 21 }],
+      "default_period": "off_peak",
+      "energy_components": [
+        {
+          "name": "generation_energy",
+          "category": "generation",
+          "rates": {
+            "winter": { "peak": "0.11869", "off_peak": "0.10512" },
+            "summer": { "peak": "0.16272", "off_peak": "0.11447" }
+          }
+        },
+        {
+          "name": "energy_commission_surcharge",
+          "category": "adder",
+          "rates": { "*": { "*": "0.00030" } }
+        }
+      ],
+      "percent_surcharges": [],
+      "baseline": null,
+      "fixed_charges": []
+    }
+  ]
+}

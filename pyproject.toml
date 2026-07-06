@@ -111,7 +111,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = [
+"tests/**" = [
     "S101",    # assert is the point of tests
     "PLR2004", # magic values fine in tests
     "D",       # docstrings not required in tests
@@ -119,6 +119,7 @@ ignore = [
     "SLF001",  # tests may touch private members
     "INP001",  # tests are not a package
     "ARG001",  # pytest fixtures are often requested by name without being referenced
+    "DTZ001",  # naive datetimes are the tariff engine's convention (utility-local time)
 ]
 "script/*" = [
     "T20",     # print() allowed in scripts
