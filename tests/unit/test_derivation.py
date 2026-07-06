@@ -73,8 +73,10 @@ def test_recovers_tou_window_and_rates():
     tolerance = Decimal("0.0002")
     peak = derived.delivery_rate("peak")
     off_peak = derived.delivery_rate("off_peak")
-    assert peak is not None and abs(peak - Decimal("0.39757")) < tolerance
-    assert off_peak is not None and abs(off_peak - Decimal("0.36757")) < tolerance
+    assert peak is not None
+    assert off_peak is not None
+    assert abs(peak - Decimal("0.39757")) < tolerance
+    assert abs(off_peak - Decimal("0.36757")) < tolerance
 
 
 def test_recovers_baseline_credit_and_allowance():
