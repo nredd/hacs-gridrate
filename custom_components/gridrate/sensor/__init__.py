@@ -24,7 +24,8 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from opower import MeterType, UnitOfMeasure
 
-from custom_components.gridrate.const import DOMAIN
+from custom_components.gridrate.const import CONF_METER_ENTITY, DOMAIN
+from custom_components.gridrate.sensor.realtime import REALTIME_SENSORS, RealtimeSensor
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -220,12 +221,20 @@ async def async_setup_entry(
     entry: GridRateConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up the GridRate utility-account sensors."""
+    """Set up the GridRate utility-account and realtime rate sensors."""
     coordinator = entry.runtime_data.opower_coordinator
     created_sensors: set[tuple[str, str]] = set()
 
+    if (realtime := entry.runtime_data.realtime_coordinator) is not None:
+        has_meter = bool(entry.options.get(CONF_METER_ENTITY))
+        async_add_entities(
+            RealtimeSensor(realtime, description, entry)
+            for description in REALTIME_SENSORS
+            if has_meter or not description.requires_meter
+        )
+
     @callback
-    def _update_entities() -> None:
+    def _update_entities() -> None:  # noqa: PLR0912 - ported nearly verbatim from core opower
         """Add entities for new accounts and clean up stale devices."""
         new_entities: list[UtilityAccountSensor] = []
         current_account_device_ids: set[str] = set()
@@ -292,6 +301,8 @@ async def async_setup_entry(
                 # This device has no GridRate identifiers; it may be a
                 # merged/shared device owned by another integration.
                 continue
+            if f"{entry.entry_id}_rate_engine" in device_domain_ids:
+                continue  # the realtime rate-engine device, not an account
             if not device_domain_ids.isdisjoint(current_account_device_ids):
                 continue  # device is still active
             # Device is stale — remove its entities then detach it.

@@ -69,8 +69,64 @@
       }
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Rate engine",
+        "description": "Select the tariff plans that make up your rate and the local energy meter that feeds realtime cost tracking.",
+        "data": {
+          "delivery_plan": "Delivery tariff",
+          "generation_plan": "Generation tariff",
+          "meter_entity": "Local energy meter"
+        },
+        "data_description": {
+          "delivery_plan": "Your utility's delivery rate plan.",
+          "generation_plan": "Your generation provider's rate plan (e.g. a CCA). Choose None if your utility bundles generation.",
+          "meter_entity": "A kWh sensor measuring whole-home consumption (e.g. a mains energy meter). Required for realtime cost, cycle usage, and baseline tracking."
+        }
+      }
+    }
+  },
+  "selector": {
+    "tariff_plan": {
+      "options": {
+        "none": "None",
+        "pge_e_tou_c": "PG&E E-TOU-C delivery (Baseline Territory T)",
+        "cleanpowersf_e_tou_c3": "CleanPowerSF E-TOU-C3 generation"
+      }
+    }
+  },
   "entity": {
+    "binary_sensor": {
+      "peak_period": {
+        "name": "Peak period"
+      },
+      "over_baseline": {
+        "name": "Over baseline"
+      }
+    },
     "sensor": {
+      "current_rate": {
+        "name": "Current rate"
+      },
+      "next_period_change": {
+        "name": "Next period change"
+      },
+      "billing_cycle_usage": {
+        "name": "Billing cycle usage"
+      },
+      "baseline_remaining": {
+        "name": "Baseline remaining"
+      },
+      "cost_today": {
+        "name": "Cost today"
+      },
+      "billing_cycle_cost": {
+        "name": "Billing cycle cost"
+      },
+      "projected_bill": {
+        "name": "Projected bill"
+      },
       "elec_cost_to_date": {
         "name": "Current bill electric cost to date"
       },

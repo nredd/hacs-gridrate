@@ -16,8 +16,20 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.loader import async_get_loaded_integration
 from opower import select_utility
 
-from custom_components.gridrate.const import CONF_UTILITY, DOMAIN
-from custom_components.gridrate.coordinator import GridRateOpowerCoordinator
+from custom_components.gridrate.api.tariff import Tariff, load_shipped_plan
+from custom_components.gridrate.const import (
+    CONF_DELIVERY_PLAN,
+    CONF_GENERATION_PLAN,
+    CONF_METER_ENTITY,
+    CONF_UTILITY,
+    DOMAIN,
+    LOGGER,
+    PLAN_NONE,
+)
+from custom_components.gridrate.coordinator import (
+    GridRateOpowerCoordinator,
+    GridRateRealtimeCoordinator,
+)
 from custom_components.gridrate.data import GridRateData
 
 if TYPE_CHECKING:
@@ -25,9 +37,23 @@ if TYPE_CHECKING:
 
     from custom_components.gridrate.data import GridRateConfigEntry
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+def _load_tariff_stack(entry: GridRateConfigEntry) -> list[Tariff]:
+    """Load the tariff stack selected in the entry options."""
+    stack: list[Tariff] = []
+    for option in (CONF_DELIVERY_PLAN, CONF_GENERATION_PLAN):
+        plan_id = entry.options.get(option)
+        if not plan_id or plan_id == PLAN_NONE:
+            continue
+        try:
+            stack.append(load_shipped_plan(plan_id))
+        except ValueError:
+            LOGGER.error("Unknown tariff plan %r in options; skipping", plan_id)
+    return stack
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: GridRateConfigEntry) -> bool:
@@ -58,6 +84,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: GridRateConfigEntry) -> 
         opower_coordinator=coordinator,
         integration=async_get_loaded_integration(hass, entry.domain),
     )
+
+    if tariffs := _load_tariff_stack(entry):
+        realtime = GridRateRealtimeCoordinator(
+            hass,
+            entry,
+            tariffs,
+            coordinator,
+            entry.options.get(CONF_METER_ENTITY),
+        )
+        await realtime.async_setup()
+        await realtime.async_config_entry_first_refresh()
+        entry.runtime_data.realtime_coordinator = realtime
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))

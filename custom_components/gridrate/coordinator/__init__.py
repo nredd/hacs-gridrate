@@ -6,5 +6,14 @@ from custom_components.gridrate.coordinator.opower import (
     GridRateOpowerCoordinator,
     UtilityAccountData,
 )
+from custom_components.gridrate.coordinator.realtime import (
+    GridRateRealtimeCoordinator,
+    RealtimeData,
+)
 
-__all__ = ["GridRateOpowerCoordinator", "UtilityAccountData"]
+__all__ = [
+    "GridRateOpowerCoordinator",
+    "GridRateRealtimeCoordinator",
+    "RealtimeData",
+    "UtilityAccountData",
+]

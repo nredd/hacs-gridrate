@@ -14,5 +14,13 @@ CONF_UTILITY = "utility"
 CONF_TOTP_SECRET = "totp_secret"  # noqa: S105 - config key name, not a secret
 CONF_LOGIN_DATA = "login_data"
 
+# Options keys (rate engine).
+CONF_METER_ENTITY = "meter_entity"
+CONF_DELIVERY_PLAN = "delivery_plan"
+CONF_GENERATION_PLAN = "generation_plan"
+
+# Option value meaning "no plan selected".
+PLAN_NONE = "none"
+
 # Entities are updated from shared coordinators; serialize platform updates.
 PARALLEL_UPDATES = 0

@@ -25,6 +25,9 @@ from opower import (
 )
 import voluptuous as vol
 
+from custom_components.gridrate.config_flow_handler.options_flow import (
+    GridRateOptionsFlowHandler,
+)
 from custom_components.gridrate.const import (
     CONF_LOGIN_DATA,
     CONF_TOTP_SECRET,
@@ -36,7 +39,7 @@ from custom_components.gridrate.const import (
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from homeassistant.config_entries import ConfigFlowResult
+    from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
     from homeassistant.helpers.typing import VolDictType
     from opower import MfaHandlerBase
 
@@ -64,6 +67,14 @@ class GridRateConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle the config flow for GridRate utility accounts."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,  # noqa: ARG004 - name fixed by the base class
+    ) -> GridRateOptionsFlowHandler:
+        """Return the options flow handler for an entry."""
+        return GridRateOptionsFlowHandler()
 
     def __init__(self) -> None:
         """Initialize a new GridRate config flow."""
