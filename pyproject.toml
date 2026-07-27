@@ -34,7 +34,7 @@ dev = [
     "yamllint>=1.35",
     "codespell>=2.4.1",
     "conventional-pre-commit>=3.0",
-    "colorlog==6.10.1",
+    "colorlog==6.11.0",
     "zlib_ng==1.0.0",
     "isal==1.8.0",
 ]
